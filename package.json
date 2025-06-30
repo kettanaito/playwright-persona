@@ -1,0 +1,25 @@
+{
+  "type": "module",
+  "name": "playwright-persona",
+  "version": "0.0.0",
+  "description": "",
+  "main": "./build/index.js",
+  "types": "./build/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": {
+    "name": "Artem Zakharchenko",
+    "url": "https://github.com/kettanaito"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.53.1",
+    "@types/node": "^24.0.7",
+    "tsdown": "^0.12.9"
+  },
+  "dependencies": {
+    "outvariant": "^1.4.3"
+  }
+}
