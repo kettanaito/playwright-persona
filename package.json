@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "playwright-persona",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Authentication in Playwright using personas.",
   "main": "./build/index.js",
   "types": "./build/index.d.ts",
