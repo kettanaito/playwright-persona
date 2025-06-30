@@ -121,5 +121,7 @@ async function restoreSessionState(filePath: URL, page: Page): Promise<void> {
         }
       }),
     )
+
+    await newPage.close()
   }
 }
