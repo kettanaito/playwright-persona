@@ -10,7 +10,14 @@
     "test": "echo 0",
     "release": "release publish"
   },
-  "keywords": [],
+  "keywords": [
+    "playwright",
+    "test",
+    "setup",
+    "auth",
+    "authentication",
+    "persona"
+  ],
   "author": {
     "name": "Artem Zakharchenko",
     "url": "https://github.com/kettanaito"
