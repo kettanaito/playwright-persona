@@ -102,7 +102,7 @@ async function restoreSessionState(filePath: URL, page: Page): Promise<void> {
 
   if (contents.origins.length > 0) {
     const newPage = await page.context().newPage()
-    newPage.route(/.+/, async (route) => {
+    await newPage.route(/.+/, async (route) => {
       await route.fulfill({ body: `<html></html>` }).catch(() => {})
     })
 
