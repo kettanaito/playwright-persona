@@ -6,7 +6,9 @@
   "main": "./build/index.js",
   "types": "./build/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsdown",
+    "test": "echo 0",
+    "release": "release publish"
   },
   "keywords": [],
   "author": {
@@ -15,9 +17,11 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@ossjs/release": "^0.8.1",
     "@playwright/test": "^1.53.1",
     "@types/node": "^24.0.7",
-    "tsdown": "^0.12.9"
+    "tsdown": "^0.12.9",
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "outvariant": "^1.4.3"
