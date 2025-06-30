@@ -100,5 +100,26 @@ async function restoreSessionState(filePath: URL, page: Page): Promise<void> {
 
   await page.context().addCookies(contents.cookies)
 
-  /** @todo Apply local storage */
+  if (contents.origins.length > 0) {
+    const newPage = await page.context().newPage()
+    newPage.route(/.+/, async (route) => {
+      await route.fulfill({ body: `<html></html>` }).catch(() => {})
+    })
+
+    await Promise.allSettled(
+      contents.origins.map(async (state) => {
+        const frame = newPage.mainFrame()
+        await frame.goto(state.origin)
+
+        for (const item of state.localStorage) {
+          await frame.evaluate(
+            ([key, value]) => {
+              localStorage.setItem(key, value)
+            },
+            [item.name, item.value],
+          )
+        }
+      }),
+    )
+  }
 }
