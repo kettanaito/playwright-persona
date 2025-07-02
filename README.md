@@ -1,6 +1,9 @@
 <h1 align="center">Playwright Persona 🎭</h1>
 <p align="center">Authentication in <a href="https://playwright.dev/">Playwright</a> using personas.</p>
 
+> [!IMPORTANT]
+> There's an [official proposal](https://github.com/microsoft/playwright/issues/36540) opened to bring this API natively to Playwright. If you like what this library does and believe it can be a great addition to Playwright, please consider upvoting that proposal and sharing your thoughts in the referenced issue. Thank you!
+
 ## Motivation
 
 Testing authentication-dependent behaviors requires you to set up authentication in your tests. Playwright comes with some great APIs and recommendations when it comes to [Authentication](https://playwright.dev/docs/auth). However, I found a few problems with the official recommendations:
