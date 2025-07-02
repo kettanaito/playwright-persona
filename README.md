@@ -109,6 +109,7 @@ import { test, expect } from '../test-extend'
 
 test('displays no notes for a new user', async ({ authenticate, page }) => {
   // Authenticate as any persona in this test.
+  // And yes, both persona names and session objects are 100% type-safe! 🎉
   const session = await authenticate({ as: 'user' })
 
   await page.goto(`/notes/${session.user.username}/notes`)
