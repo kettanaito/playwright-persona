@@ -12,8 +12,8 @@ export interface PersonaOptions {
   ttl?: number
 }
 
-interface PlaywrightContext {
-  page: unknown
+export interface CreateSessionContext {
+  page: Page
 }
 
 export interface Persona {
@@ -23,10 +23,10 @@ export interface Persona {
 }
 
 type CreateSessionFunction = (
-  context: PlaywrightContext,
-) => Promise<DestroyFunction>
+  context: CreateSessionContext,
+) => Promise<DestroyFunction | void>
 
-type DestroyFunction = () => Promise<void>
+type DestroyFunction = () => Promise<void> | void
 
 export function definePersona(name: string, options: PersonaOptions): Persona {
   return {
@@ -40,10 +40,10 @@ export function definePersona(name: string, options: PersonaOptions): Persona {
 }
 
 export type AuthenticateFunction = (
-  options: AuthenticationOptions,
+  options: AuthenticateOptions,
 ) => Promise<void>
 
-export interface AuthenticationOptions {
+export interface AuthenticateOptions {
   as: string
 }
 
@@ -56,7 +56,7 @@ export function combinePersonas(
     { context, page }: PlaywrightTestArgs & PlaywrightWorkerArgs,
     use,
   ) => {
-    let destroySession: DestroyFunction | undefined
+    let destroySession: DestroyFunction | undefined | void
 
     await use(async (options) => {
       const persona = personas.find((persona) => {
