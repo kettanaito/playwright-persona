@@ -1,4 +1,4 @@
-import { test, expectTypeOf } from 'vitest'
+import { test, expectTypeOf, expect } from 'vitest'
 import { test as testBase } from '@playwright/test'
 import {
   definePersona,
@@ -33,7 +33,9 @@ test('infers session return type', () => {
     async createSession() {
       return { user: 'abc-123' }
     },
-    verifySession: async () => {},
+    verifySession: async ({ session }) => {
+      expectTypeOf(session).toEqualTypeOf<{ user: string }>()
+    },
   })
 
   testBase.extend<{
