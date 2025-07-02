@@ -9,7 +9,7 @@ import type {
   TestInfo,
 } from '@playwright/test'
 
-type SessionValueType = string | number | Date
+type SessionValueType = string | number | Date | null | undefined
 
 export type SessionType = Record<
   string,
