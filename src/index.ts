@@ -13,7 +13,6 @@ export interface PersonaOptions<Session extends Record<string, unknown>> {
   createSession: CreateSessionFunction<Session>
   verifySession: VerifySessionFunction<Session>
   destroySession?: DestroySessionFunction<Session>
-  ttl?: number
 }
 
 export interface CreateSessionContext {
