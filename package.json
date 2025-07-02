@@ -5,6 +5,10 @@
   "description": "Authentication in Playwright using personas.",
   "main": "./build/index.js",
   "types": "./build/index.d.ts",
+  "files": [
+    "./build",
+    "./src"
+  ],
   "scripts": {
     "build": "tsdown",
     "test": "echo 0",
