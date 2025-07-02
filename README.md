@@ -1,9 +1,5 @@
 <h1 align="center">Playwright Persona 🎭</h1>
-<center>
-
-Authentication in [Playwright](https://playwright.dev/) using personas.
-
-</center>
+<p align="center">Authentication in <a href="https://playwright.dev/">Playwright</a> using personas.</p>
 
 ## Motivation
 
