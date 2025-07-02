@@ -6,6 +6,7 @@ import type {
   PlaywrightTestArgs,
   PlaywrightWorkerArgs,
   Page,
+  TestInfo,
 } from '@playwright/test'
 
 export interface PersonaOptions {
@@ -25,6 +26,7 @@ export interface Persona {
 
 type CreateSessionFunction = (
   context: CreateSessionContext,
+  testInfo: TestInfo,
 ) => Promise<DestroyFunction | void>
 
 type DestroyFunction = () => Promise<void> | void
@@ -33,8 +35,8 @@ export function definePersona(name: string, options: PersonaOptions): Persona {
   return {
     name,
     ttl: options.ttl,
-    async createSession(context) {
-      const destroySession = await options.createSession(context)
+    async createSession(context, testInfo) {
+      const destroySession = await options.createSession(context, testInfo)
       return destroySession
     },
   }
@@ -56,6 +58,7 @@ export function combinePersonas(
   return async (
     { context, page }: PlaywrightTestArgs & PlaywrightWorkerArgs,
     use,
+    testInfo,
   ) => {
     let destroySession: DestroyFunction | undefined | void
 
@@ -81,7 +84,7 @@ export function combinePersonas(
         !fs.existsSync(sessionFile) ||
         fs.statSync(sessionFile).ctimeMs >= Date.now() + ttl * 1000
       ) {
-        destroySession = await persona.createSession({ page })
+        destroySession = await persona.createSession({ page }, testInfo)
         await context.storageState({
           path: sessionFile,
         })
