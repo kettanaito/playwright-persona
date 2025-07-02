@@ -113,6 +113,25 @@ test('displays no notes for a new user', async ({ authenticate, page }) => {
 })
 ```
 
+## Session persistence
+
+**Authenticated sessions are always persisted when using Playwright Persona**. This allows us to promote test case-based authentication while keeping your tests performant and not DDoS'ing your authentication provider on each test run.
+
+Sessions are stored using the [`storageState`](https://playwright.dev/docs/api/class-apirequestcontext#api-request-context-storage-state) API in Playwright. Sessions are stored on the disk, in JSON files of a `${testId}-${personaName}.json` format. This means that each test case and each persona used in that test case yield unique session snapshots that can be reused later.
+
+When you authenticate as a persona, the library first checks if the corresponding session snapshot exists on the disk. If it does, it reads it and provides it to your `verifySession` method to verify.
+
+If the `verifySession` method resolves, the following happens:
+
+1. The library applies the session snapshot directly to your browser context without re-running the `createSession` instructions.
+
+If the `verifySession` method throws, indicating that the persisted session is stale, the following happens:
+
+1. The optional `destroySession` method is called. Use this method to clean up any test resources related to the previous, stale session.
+1. The `createSession` method is called, creating a new session and writing it to the disk again.
+
+From here, it's rinse and repeat.
+
 ## Authentication patterns
 
 When setting up authentication in tests, there are two main factors: the test user and the session. The test user can be _fixed_ or _random_. The session can be _disposable_ or _persistent_. A combination of these factors creates a different authentication pattern with its ups and downs.
