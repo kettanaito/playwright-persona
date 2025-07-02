@@ -9,8 +9,8 @@ import type {
   TestInfo,
 } from '@playwright/test'
 
-export interface PersonaOptions {
-  createSession: CreateSessionFunction
+export interface PersonaOptions<Session extends Record<string, unknown>> {
+  createSession: CreateSessionFunction<Session>
   ttl?: number
 }
 
@@ -18,50 +18,62 @@ export interface CreateSessionContext {
   page: Page
 }
 
-export interface Persona {
-  name: string
-  createSession: CreateSessionFunction
+export interface Persona<
+  Name extends string,
+  Session extends Record<string, unknown>,
+> {
+  name: Name
+  createSession: CreateSessionFunction<Session>
   ttl?: number
 }
 
-type CreateSessionFunction = (
+export type CreateSessionFunction<Session extends Record<string, unknown>> = (
   context: CreateSessionContext,
   testInfo: TestInfo,
-) => Promise<DestroyFunction | void>
+) => Promise<Session>
 
-type DestroyFunction = () => Promise<void> | void
-
-export function definePersona(name: string, options: PersonaOptions): Persona {
+export function definePersona<
+  Name extends string,
+  Session extends Record<string, unknown>,
+>(name: Name, options: PersonaOptions<Session>): Persona<Name, Session> {
   return {
     name,
     ttl: options.ttl,
     async createSession(context, testInfo) {
-      const destroySession = await options.createSession(context, testInfo)
-      return destroySession
+      return await options.createSession(context, testInfo)
     },
   }
 }
 
-export type AuthenticateFunction = (
-  options: AuthenticateOptions,
-) => Promise<void>
+export type AuthenticateFunction<Personas extends Array<Persona<any, any>>> =
+  (options: {
+    as: ExtractPersonaNames<Personas>
+  }) => Promise<ExtractSessionTypes<Personas>[(typeof options)['as']]>
 
-export interface AuthenticateOptions {
-  as: string
-}
+type ExtractPersonaNames<Personas extends Array<Persona<any, any>>> =
+  Personas extends Array<infer P>
+    ? P extends Persona<infer Name, any>
+      ? Name
+      : never
+    : never
+
+type ExtractSessionTypes<Personas extends Array<Persona<any, any>>> =
+  Personas extends Array<infer P>
+    ? P extends Persona<infer Name, infer Session>
+      ? Record<Name, Session>
+      : never
+    : never
 
 const STORAGE_STATE_DIRECTORY = path.join(process.cwd(), './playwright/.auth/')
 
-export function combinePersonas(
-  ...personas: Array<Persona>
-): TestFixture<AuthenticateFunction, any> {
+export function combinePersonas<Personas extends Array<Persona<any, any>>>(
+  ...personas: Personas
+): TestFixture<AuthenticateFunction<Personas>, any> {
   return async (
     { context, page }: PlaywrightTestArgs & PlaywrightWorkerArgs,
     use,
     testInfo,
   ) => {
-    let destroySession: DestroyFunction | undefined | void
-
     await use(async (options) => {
       const persona = personas.find((persona) => {
         return persona.name === options.as
@@ -77,23 +89,23 @@ export function combinePersonas(
       const ttl = persona.ttl ?? Infinity
       const sessionFile = path.join(
         STORAGE_STATE_DIRECTORY,
-        `./${persona.name}.json`,
+        `./${testInfo.testId}-${persona.name}.json`,
       )
 
       if (
         !fs.existsSync(sessionFile) ||
         fs.statSync(sessionFile).ctimeMs >= Date.now() + ttl * 1000
       ) {
-        destroySession = await persona.createSession({ page }, testInfo)
+        const session = await persona.createSession({ page }, testInfo)
         await context.storageState({
           path: sessionFile,
         })
+
+        return session
       } else {
         await restoreSessionState(sessionFile, page)
       }
     })
-
-    await destroySession?.()
   }
 }
 
