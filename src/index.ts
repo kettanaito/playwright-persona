@@ -11,10 +11,24 @@ import type {
 
 export interface PersonaOptions<Session extends Record<string, unknown>> {
   createSession: CreateSessionFunction<Session>
+  verifySession: VerifySessionFunction<Session>
+  destroySession?: DestroySessionFunction<Session>
   ttl?: number
 }
 
 export interface CreateSessionContext {
+  page: Page
+}
+
+export interface VerifySessionContext<Session extends Record<string, unknown>> {
+  session: Session
+  page: Page
+}
+
+export interface DestroySessionContext<
+  Session extends Record<string, unknown>,
+> {
+  session: Session
   page: Page
 }
 
@@ -24,7 +38,8 @@ export interface Persona<
 > {
   name: Name
   createSession: CreateSessionFunction<Session>
-  ttl?: number
+  verifySession: VerifySessionFunction<Session>
+  destroySession?: DestroySessionFunction<Session>
 }
 
 export type CreateSessionFunction<Session extends Record<string, unknown>> = (
@@ -32,16 +47,24 @@ export type CreateSessionFunction<Session extends Record<string, unknown>> = (
   testInfo: TestInfo,
 ) => Promise<Session>
 
+export type VerifySessionFunction<Session extends Record<string, unknown>> = (
+  context: VerifySessionContext<Session>,
+  testInfo: TestInfo,
+) => Promise<void>
+
+export type DestroySessionFunction<Session extends Record<string, unknown>> = (
+  context: DestroySessionContext<Session>,
+  testInfo: TestInfo,
+) => Promise<void>
+
 export function definePersona<
   Name extends string,
   Session extends Record<string, unknown>,
 >(name: Name, options: PersonaOptions<Session>): Persona<Name, Session> {
   return {
     name,
-    ttl: options.ttl,
-    async createSession(context, testInfo) {
-      return await options.createSession(context, testInfo)
-    },
+    createSession: options.createSession,
+    verifySession: options.verifySession,
   }
 }
 
@@ -74,6 +97,21 @@ export function combinePersonas<Personas extends Array<Persona<any, any>>>(
     use,
     testInfo,
   ) => {
+    const createSessionFilePath = (persona: Persona<any, any>) => {
+      return path.join(
+        STORAGE_STATE_DIRECTORY,
+        `./${testInfo.testId}-${persona.name}.json`,
+      )
+    }
+
+    const createSession = async (persona: Persona<any, any>) => {
+      const session = await persona.createSession({ page }, testInfo)
+      await context.storageState({
+        path: createSessionFilePath(persona),
+      })
+      return session
+    }
+
     await use(async (options) => {
       const persona = personas.find((persona) => {
         return persona.name === options.as
@@ -86,47 +124,65 @@ export function combinePersonas<Personas extends Array<Persona<any, any>>>(
         personas.join(', '),
       )
 
-      const ttl = persona.ttl ?? Infinity
-      const sessionFile = path.join(
-        STORAGE_STATE_DIRECTORY,
-        `./${testInfo.testId}-${persona.name}.json`,
-      )
+      const sessionFilePath = createSessionFilePath(persona)
 
-      if (
-        !fs.existsSync(sessionFile) ||
-        fs.statSync(sessionFile).ctimeMs >= Date.now() + ttl * 1000
-      ) {
-        const session = await persona.createSession({ page }, testInfo)
-        await context.storageState({
-          path: sessionFile,
-        })
+      if (fs.existsSync(sessionFilePath)) {
+        const sessionFile = await readSessionFile(sessionFilePath)
 
-        return session
-      } else {
-        await restoreSessionState(sessionFile, page)
+        return persona
+          .verifySession(
+            {
+              page,
+              session: sessionFile.session,
+            },
+            testInfo,
+          )
+          .then(async () => {
+            await restoreSessionState(sessionFile, page)
+            return sessionFile.session
+          })
+          .catch(async () => {
+            await persona.destroySession?.(
+              {
+                page,
+                session: sessionFile.session,
+              },
+              testInfo,
+            )
+            return createSession(persona)
+          })
       }
+
+      return createSession(persona)
     })
   }
 }
 
+type SessionFile = Awaited<
+  ReturnType<PlaywrightTestArgs['context']['storageState']>
+> & {
+  session: Record<string, any>
+}
+
+async function readSessionFile(filePath: string): Promise<SessionFile> {
+  const textContent = await fs.promises.readFile(filePath, 'utf8')
+  return JSON.parse(textContent) as SessionFile
+}
+
 async function restoreSessionState(
-  filePath: string,
+  sesionFile: SessionFile,
   page: Page,
 ): Promise<void> {
-  const contents = JSON.parse(
-    await fs.promises.readFile(filePath, 'utf8'),
-  ) as Awaited<ReturnType<PlaywrightTestArgs['context']['storageState']>>
+  await page.context().addCookies(sesionFile.cookies)
 
-  await page.context().addCookies(contents.cookies)
-
-  if (contents.origins.length > 0) {
+  if (sesionFile.origins.length > 0) {
     const newPage = await page.context().newPage()
     await newPage.route(/.+/, async (route) => {
       await route.fulfill({ body: `<html></html>` }).catch(() => {})
     })
 
     await Promise.allSettled(
-      contents.origins.map(async (state) => {
+      sesionFile.origins.map(async (state) => {
         const frame = newPage.mainFrame()
         await frame.goto(state.origin)
 

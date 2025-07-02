@@ -9,9 +9,11 @@ import {
 test('infers persona names', () => {
   const user = definePersona('user', {
     createSession: async () => ({}),
+    verifySession: async () => {},
   })
   const admin = definePersona('admin', {
     createSession: async () => ({}),
+    verifySession: async () => {},
   })
 
   testBase.extend<{
@@ -31,6 +33,7 @@ test('infers session return type', () => {
     async createSession() {
       return { user: 'abc-123' }
     },
+    verifySession: async () => {},
   })
 
   testBase.extend<{
