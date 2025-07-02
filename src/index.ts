@@ -9,7 +9,14 @@ import type {
   TestInfo,
 } from '@playwright/test'
 
-export interface PersonaOptions<Session extends Record<string, unknown>> {
+type SessionValueType = string | number | Date
+
+export type SessionType = Record<
+  string,
+  SessionValueType | { [key: string]: SessionValueType }
+>
+
+export interface PersonaOptions<Session extends SessionType> {
   createSession: CreateSessionFunction<Session>
   verifySession: VerifySessionFunction<Session>
   destroySession?: DestroySessionFunction<Session>
@@ -19,47 +26,42 @@ export interface CreateSessionContext {
   page: Page
 }
 
-export interface VerifySessionContext<Session extends Record<string, unknown>> {
+export interface VerifySessionContext<Session extends SessionType> {
   session: Session
   page: Page
 }
 
-export interface DestroySessionContext<
-  Session extends Record<string, unknown>,
-> {
+export interface DestroySessionContext<Session extends SessionType> {
   session: Session
   page: Page
 }
 
-export interface Persona<
-  Name extends string,
-  Session extends Record<string, unknown>,
-> {
+export interface Persona<Name extends string, Session extends SessionType> {
   name: Name
   createSession: CreateSessionFunction<Session>
   verifySession: VerifySessionFunction<Session>
   destroySession?: DestroySessionFunction<Session>
 }
 
-export type CreateSessionFunction<Session extends Record<string, unknown>> = (
+export type CreateSessionFunction<Session extends SessionType> = (
   context: CreateSessionContext,
   testInfo: TestInfo,
 ) => Promise<Session>
 
-export type VerifySessionFunction<Session extends Record<string, unknown>> = (
+export type VerifySessionFunction<Session extends SessionType> = (
   context: VerifySessionContext<Session>,
   testInfo: TestInfo,
 ) => Promise<void>
 
-export type DestroySessionFunction<Session extends Record<string, unknown>> = (
+export type DestroySessionFunction<Session extends SessionType> = (
   context: DestroySessionContext<Session>,
   testInfo: TestInfo,
 ) => Promise<void>
 
-export function definePersona<
-  Name extends string,
-  Session extends Record<string, unknown>,
->(name: Name, options: PersonaOptions<Session>): Persona<Name, Session> {
+export function definePersona<Name extends string, Session extends SessionType>(
+  name: Name,
+  options: PersonaOptions<Session>,
+): Persona<Name, Session> {
   return {
     name,
     createSession: options.createSession,
@@ -105,9 +107,19 @@ export function combinePersonas<Personas extends Array<Persona<any, any>>>(
 
     const createSession = async (persona: Persona<any, any>) => {
       const session = await persona.createSession({ page }, testInfo)
+      const sessionFilePath = createSessionFilePath(persona)
+
       await context.storageState({
-        path: createSessionFilePath(persona),
+        path: sessionFilePath,
       })
+
+      const sessionFile = await readSessionFile(sessionFilePath)
+      sessionFile.session = session
+      await fs.promises.writeFile(
+        sessionFilePath,
+        JSON.stringify(sessionFile, null, 2),
+      )
+
       return session
     }
 
