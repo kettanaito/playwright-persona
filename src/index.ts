@@ -1,4 +1,5 @@
 import * as fs from 'node:fs'
+import * as path from 'node:path'
 import { invariant } from 'outvariant'
 import type {
   TestFixture,
@@ -47,7 +48,7 @@ export interface AuthenticateOptions {
   as: string
 }
 
-const STORAGE_STATE_DIRECTORY = new URL('./playwright/.auth/', import.meta.url)
+const STORAGE_STATE_DIRECTORY = path.join(process.cwd(), './playwright/.auth/')
 
 export function combinePersonas(
   ...personas: Array<Persona>
@@ -71,9 +72,9 @@ export function combinePersonas(
       )
 
       const ttl = persona.ttl ?? Infinity
-      const sessionFile = new URL(
-        `./${persona.name}.json`,
+      const sessionFile = path.join(
         STORAGE_STATE_DIRECTORY,
+        `./${persona.name}.json`,
       )
 
       if (
@@ -82,7 +83,7 @@ export function combinePersonas(
       ) {
         destroySession = await persona.createSession({ page })
         await context.storageState({
-          path: sessionFile.pathname,
+          path: sessionFile,
         })
       } else {
         await restoreSessionState(sessionFile, page)
@@ -93,7 +94,10 @@ export function combinePersonas(
   }
 }
 
-async function restoreSessionState(filePath: URL, page: Page): Promise<void> {
+async function restoreSessionState(
+  filePath: string,
+  page: Page,
+): Promise<void> {
   const contents = JSON.parse(
     await fs.promises.readFile(filePath, 'utf8'),
   ) as Awaited<ReturnType<PlaywrightTestArgs['context']['storageState']>>
