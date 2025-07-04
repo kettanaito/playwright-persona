@@ -94,7 +94,7 @@ export function combinePersonas<Personas extends Array<Persona<any, any>>>(
   ...personas: Personas
 ): TestFixture<AuthenticateFunction<Personas>, any> {
   return async (
-    { context, page }: PlaywrightTestArgs & PlaywrightWorkerArgs,
+    { browser, context, page }: PlaywrightTestArgs & PlaywrightWorkerArgs,
     use,
     testInfo,
   ) => {
@@ -140,10 +140,17 @@ export function combinePersonas<Personas extends Array<Persona<any, any>>>(
       if (fs.existsSync(sessionFilePath)) {
         const sessionFile = await readSessionFile(sessionFilePath)
 
+        // Perform session verification in a new, isolated context.
+        const newContext = await browser.newContext({
+          storageState: sessionFile,
+        })
+        const newPage = await newContext.newPage()
+        await restoreSessionState(sessionFile, newPage)
+
         return persona
           .verifySession(
             {
-              page,
+              page: newPage,
               session: sessionFile.session,
             },
             testInfo,
