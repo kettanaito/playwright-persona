@@ -9,6 +9,8 @@ import type {
   TestInfo,
 } from '@playwright/test'
 
+const STORAGE_STATE_DIRECTORY = path.join(process.cwd(), './playwright/.auth/')
+
 type SessionValueType = string | number | Date | null | undefined
 
 export type SessionType = Record<
@@ -87,8 +89,6 @@ type ExtractSessionTypes<Personas extends Array<Persona<any, any>>> =
       ? Record<Name, Session>
       : never
     : never
-
-const STORAGE_STATE_DIRECTORY = path.join(process.cwd(), './playwright/.auth/')
 
 export function combinePersonas<Personas extends Array<Persona<any, any>>>(
   ...personas: Personas

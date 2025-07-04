@@ -29,6 +29,15 @@ First, install the `playwright-persona` package as a dependency in your project:
 npm i playwright-persona --save-dev
 ```
 
+#### Ignore sessions directory
+
+> [!WARNING]
+> This library persists successful sessions in the `./playwright/auth` directory. **You MUST ignore that directory in Git** as it will contain sensitive information.
+
+```sh
+echo $'\nplaywright/auth' >> .gitignore
+```
+
 ### 2. Define personas
 
 Next, define the personas for your application. A persona is a user role that can interact with your app. Each persona requires three arguments:
