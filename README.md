@@ -17,7 +17,7 @@ And that's why `playwright-persona` exists—to address the issues above and als
 1. **Declarative**. From how you define different user roles to the authentication literally becoming `await authenticate({ as: 'user' })` in your tests.
 1. **Test case-based**. Every test case runs against a completely isolated authentication state. Unique users, unique sessions, no shared state.
 1. **Performant**. Authenticating for each test case from ground up would be expensive. This package stores a successful authentication session on disk, verifies if that session is valid, then reuses it in tests without re-running the entire authentication flow.
-1. **Flexible**. You can describe any possible [authentication pattern](#authentication-patterns) with this package. You can even reuse a single authentication setup for multiple tests if you so choose, but this is not encouraged.
+1. **Flexible**. You can describe any possible [authentication recipes](#recipes) with this package. You can even reuse a single authentication setup for multiple tests if you so choose, but this is not encouraged.
 
 ## Usage
 
@@ -145,7 +145,7 @@ If the `verifySession` method throws, indicating that the persisted session is s
 
 From here, it's rinse and repeat.
 
-## Authentication patterns
+## Recipes
 
 When setting up authentication in tests, there are two main factors: the test user and the session. The test user can be _fixed_ or _random_. The session can be _disposable_ or _persistent_. A combination of these factors creates a different authentication pattern with its ups and downs.
 
@@ -225,3 +225,53 @@ To prevent leaking resources, use the `destroySession` method of the persona. It
 
 > [!IMPORTANT]
 > You can extend the example above and introduce a _predictable randomness_ to your test users. One way to do that is by grabbing the second argument of `createSession`—the Playwright's `testInfo` object—and, say, using `testInfo.testId` as the test user's `id`.
+
+
+### Shared authentication in all tests
+
+Playwright Persona is not opinionated in where you integrate authentication into your test setup. For example, you can reuse the same authenticated state across the entire test run, which is similar to what Playwright recommends currently.
+
+> ![WARNING]
+> **We do not recommend this approach**. By using this, you are introducing a _shared state_ in a form of authentication state. This is highly likely to make your tests flaky.
+
+First, create a special `auth.setup.ts` test that will use the `authenticate()` fixture to provision authentication once:
+
+```ts
+// tests/auth.setup.ts
+import { test } from '@playwright/test'
+
+test('authenticate', async ({ authenticate }) => {
+  await authenticate({ as: 'user' })
+})
+```
+
+Then, use the special `auth.setup.ts` project as a dependency for authentication-dependent tests:
+
+```ts
+// playwright.config.ts
+export default defineConfig({
+  projects: [
+    { name: 'setup', testMatch /.*\.setup\.ts/ },
+
+    {
+      name: 'chromium',
+      dependencies: ['setup'],
+      use: { ...devices['Desktop Chrome'] }
+    }
+  ]
+})
+```
+
+### Worker-scoped authentication
+
+You can scope authentication to worker by implementing `authenticate` as [worker-scoped fixture](https://playwright.dev/docs/test-fixtures#worker-scoped-fixtures).
+
+```ts
+import { test as testBase } from '@playwright/test'
+import { combinePersonas } from 'playwright-persona'
+import { user } from './personas'
+
+export const test = testBase.extend({
+  authentication: [combinePersonas(user), { scope: 'worker' }]
+})
+```
