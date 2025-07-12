@@ -238,7 +238,7 @@ First, create a special `auth.setup.ts` test that will use the `authenticate()` 
 
 ```ts
 // tests/auth.setup.ts
-import { test } from '@playwright/test'
+import { test } from './test-extend'
 
 test('authenticate', async ({ authenticate }) => {
   await authenticate({ as: 'user' })
