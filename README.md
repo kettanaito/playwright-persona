@@ -231,7 +231,7 @@ To prevent leaking resources, use the `destroySession` method of the persona. It
 
 Playwright Persona is not opinionated in where you integrate authentication into your test setup. For example, you can reuse the same authenticated state across the entire test run, which is similar to what Playwright recommends currently.
 
-> ![WARNING]
+> [!WARNING]
 > **We do not recommend this approach**. By using this, you are introducing a _shared state_ in a form of authentication state. This is highly likely to make your tests flaky.
 
 First, create a special `auth.setup.ts` test that will use the `authenticate()` fixture to provision authentication once:
