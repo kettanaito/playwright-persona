@@ -140,7 +140,7 @@ export function combinePersonas<Personas extends Array<Persona<any, any>>>(
       if (fs.existsSync(sessionFilePath)) {
         const sessionFile = await readSessionFile(sessionFilePath)
 
-        // Perform session verification in a new, isolated context.
+        // Verify the session in a new, isolated browser context.
         const newContext = await browser.newContext({
           storageState: sessionFile,
         })
@@ -168,6 +168,9 @@ export function combinePersonas<Personas extends Array<Persona<any, any>>>(
               testInfo,
             )
             return createSession(persona)
+          })
+          .finally(async () => {
+            await newContext.close()
           })
       }
 
