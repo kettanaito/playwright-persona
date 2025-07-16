@@ -32,10 +32,10 @@ npm i playwright-persona --save-dev
 #### Ignore sessions directory
 
 > [!WARNING]
-> This library persists successful sessions in the `./playwright/auth` directory. **You MUST ignore that directory in Git** as it will contain sensitive information.
+> This library persists successful sessions in the `./playwright/.auth` directory. **You MUST ignore that directory in Git** as it will contain sensitive information.
 
 ```sh
-echo $'\nplaywright/auth' >> .gitignore
+echo $'\nplaywright/.auth' >> .gitignore
 ```
 
 ### 2. Define personas
@@ -226,13 +226,11 @@ To prevent leaking resources, use the `destroySession` method of the persona. It
 > [!IMPORTANT]
 > You can extend the example above and introduce a _predictable randomness_ to your test users. One way to do that is by grabbing the second argument of `createSession`—the Playwright's `testInfo` object—and, say, using `testInfo.testId` as the test user's `id`.
 
-
 ### Shared authentication in all tests
 
 Playwright Persona is not opinionated in where you integrate authentication into your test setup. For example, you can reuse the same authenticated state across the entire test run, which is similar to what Playwright recommends currently.
 
-> [!WARNING]
-> **We do not recommend this approach**. By using this, you are introducing a _shared state_ in a form of authentication state. This is highly likely to make your tests flaky.
+> [!WARNING] > **We do not recommend this approach**. By using this, you are introducing a _shared state_ in a form of authentication state. This is highly likely to make your tests flaky.
 
 First, create a special `auth.setup.ts` test that will use the `authenticate()` fixture to provision authentication once:
 
@@ -272,6 +270,6 @@ import { combinePersonas } from 'playwright-persona'
 import { user } from './personas'
 
 export const test = testBase.extend({
-  authentication: [combinePersonas(user), { scope: 'worker' }]
+  authentication: [combinePersonas(user), { scope: 'worker' }],
 })
 ```
