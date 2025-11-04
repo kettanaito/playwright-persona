@@ -72,25 +72,29 @@ export function definePersona<Name extends string, Session extends SessionType>(
     name,
     createSession: options.createSession,
     verifySession: options.verifySession,
+    destroySession: options.destroySession,
   }
 }
 
-export type AuthenticateFunction<Personas extends Array<Persona<any, any>>> =
-  (options: {
-    as: ExtractPersonaNames<Personas>
-  }) => Promise<ExtractSessionTypes<Personas>[(typeof options)['as']]>
+export type AuthenticateFunction<Personas extends Array<Persona<any, any>>> = <
+  Name extends ExtractPersonaNames<Personas>,
+>(options: {
+  as: Name
+}) => Promise<MapPersonasToRecord<Personas>[Name]>
+
+type MapPersonasToRecord<Personas extends Array<Persona<any, any>>> =
+  Personas extends Array<infer P>
+    ? {
+        [Name in P extends Persona<infer Name, any>
+          ? Name
+          : never]: P extends Persona<Name, infer Session> ? Session : never
+      }
+    : never
 
 type ExtractPersonaNames<Personas extends Array<Persona<any, any>>> =
   Personas extends Array<infer P>
     ? P extends Persona<infer Name, any>
       ? Name
-      : never
-    : never
-
-type ExtractSessionTypes<Personas extends Array<Persona<any, any>>> =
-  Personas extends Array<infer P>
-    ? P extends Persona<infer Name, infer Session>
-      ? Record<Name, Session>
       : never
     : never
 
