@@ -11,12 +11,16 @@ import type {
 
 const STORAGE_STATE_DIRECTORY = path.join(process.cwd(), './playwright/.auth/')
 
-type SessionValueType = string | number | Date | null | undefined
+type SessionValueType =
+  | string
+  | number
+  | Date
+  | null
+  | undefined
+  | Array<SessionValueType>
+  | { [key: string]: SessionValueType }
 
-export type SessionType = Record<
-  string,
-  SessionValueType | { [key: string]: SessionValueType }
->
+export type SessionType = Record<string, SessionValueType>
 
 export interface PersonaOptions<Session extends SessionType> {
   createSession: CreateSessionFunction<Session>
