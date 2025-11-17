@@ -206,28 +206,32 @@ async function restoreSessionState(
     await page.context().addCookies(sesionFile.cookies)
   }
 
-  const newPage = await page.context().newPage()
-  await newPage.route(/.+/, async (route) => {
-    await route.fulfill({ body: `<html></html>` }).catch(() => {})
-  })
+  if (sesionFile.origins.length > 0) {
+    const newPage = await page.context().newPage()
+    await newPage.route(/.+/, async (route) => {
+      await route.fulfill({ body: `<html></html>` }).catch(() => {})
+    })
 
-  /**
-   * @note Restore origin state sequentially to prevent race conditions
-   * while reusing the same frame on the page for this.
-   */
-  for (const state of sesionFile.origins) {
-    const frame = newPage.mainFrame()
-    await frame.goto(state.origin)
+    /**
+     * @note Restore origin state sequentially to prevent race conditions
+     * while reusing the same frame on the page for this.
+     */
+    for (const state of sesionFile.origins) {
+      const frame = newPage.mainFrame()
+      await frame.goto(state.origin)
 
-    for (const item of state.localStorage) {
-      await frame.evaluate(
-        ([key, value]) => {
-          localStorage.setItem(key, value)
-        },
-        [item.name, item.value],
+      await Promise.allSettled(
+        state.localStorage.map((item) => {
+          return frame.evaluate(
+            ([key, value]) => {
+              localStorage.setItem(key, value)
+            },
+            [item.name, item.value],
+          )
+        }),
       )
     }
-  }
 
-  await newPage.close()
+    await newPage.close()
+  }
 }
