@@ -273,3 +273,27 @@ export const test = testBase.extend({
   authentication: [combinePersonas(user), { scope: 'worker' }],
 })
 ```
+
+### Custom fixtures
+
+You can extend the default `PersonaContext` type to let the `definePersona()` function know about your custom Playwright fixtures. The runtime values for those fixtures are automatically exposed by Playwright, but the type information cannot be inferred automatically since the `definePersona()` is called _outside_ of `test.extend()`.
+
+```ts
+interface Fixtures {
+  myCustomFixture: string
+}
+
+declare module 'playwright-persona' {
+  // Extend the `PersonaContext` interface to annotate
+  // your custom fixtures for all `definePersona` methods.
+  interface PersonaContext extends Fixtures {}
+}
+
+const user = definePersona('user', {
+  async createSession({ page, myCustomFixture }) {
+    myCustomFixture.toUpperCase() // fully typed!
+  }
+})
+```
+
+> Extending the `PersonaContext` interface affects all `definePersona()` methods: `createSession()`, `verifySession()`, `deleteSession()`, etc.

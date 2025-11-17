@@ -28,18 +28,20 @@ export interface PersonaOptions<Session extends SessionType> {
   destroySession?: DestroySessionFunction<Session>
 }
 
-export interface CreateSessionContext {
+export interface PersonaContext {
   page: Page
 }
 
-export interface VerifySessionContext<Session extends SessionType> {
+export interface CreateSessionContext extends PersonaContext {}
+
+export interface VerifySessionContext<Session extends SessionType>
+  extends PersonaContext {
   session: Session
-  page: Page
 }
 
-export interface DestroySessionContext<Session extends SessionType> {
+export interface DestroySessionContext<Session extends SessionType>
+  extends PersonaContext {
   session: Session
-  page: Page
 }
 
 export interface Persona<Name extends string, Session extends SessionType> {
@@ -102,10 +104,12 @@ export function combinePersonas<Personas extends Array<Persona<any, any>>>(
   ...personas: Personas
 ): TestFixture<AuthenticateFunction<Personas>, any> {
   return async (
-    { browser, context, page }: PlaywrightTestArgs & PlaywrightWorkerArgs,
+    { ...testArgs }: PlaywrightTestArgs & PlaywrightWorkerArgs,
     use,
     testInfo,
   ) => {
+    const { browser, context, page } = testArgs
+
     const createSessionFilePath = (persona: Persona<any, any>) => {
       return path.join(
         STORAGE_STATE_DIRECTORY,
@@ -114,7 +118,7 @@ export function combinePersonas<Personas extends Array<Persona<any, any>>>(
     }
 
     const createSession = async (persona: Persona<any, any>) => {
-      const session = await persona.createSession({ page }, testInfo)
+      const session = await persona.createSession(testArgs, testInfo)
       const sessionFilePath = createSessionFilePath(persona)
 
       await context.storageState({
@@ -158,7 +162,7 @@ export function combinePersonas<Personas extends Array<Persona<any, any>>>(
         return persona
           .verifySession(
             {
-              page: newPage,
+              ...testArgs,
               session: sessionFile.session,
             },
             testInfo,
@@ -170,7 +174,7 @@ export function combinePersonas<Personas extends Array<Persona<any, any>>>(
           .catch(async () => {
             await persona.destroySession?.(
               {
-                page,
+                ...testArgs,
                 session: sessionFile.session,
               },
               testInfo,
