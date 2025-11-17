@@ -202,7 +202,9 @@ async function restoreSessionState(
   sesionFile: SessionFile,
   page: Page,
 ): Promise<void> {
-  await page.context().addCookies(sesionFile.cookies)
+  if (sesionFile.cookies.length > 0) {
+    await page.context().addCookies(sesionFile.cookies)
+  }
 
   if (sesionFile.origins.length > 0) {
     const newPage = await page.context().newPage()
@@ -210,21 +212,25 @@ async function restoreSessionState(
       await route.fulfill({ body: `<html></html>` }).catch(() => {})
     })
 
-    await Promise.allSettled(
-      sesionFile.origins.map(async (state) => {
-        const frame = newPage.mainFrame()
-        await frame.goto(state.origin)
+    /**
+     * @note Restore origin state sequentially to prevent race conditions
+     * while reusing the same frame on the page for this.
+     */
+    for (const state of sesionFile.origins) {
+      const frame = newPage.mainFrame()
+      await frame.goto(state.origin)
 
-        for (const item of state.localStorage) {
-          await frame.evaluate(
+      await Promise.allSettled(
+        state.localStorage.map((item) => {
+          return frame.evaluate(
             ([key, value]) => {
               localStorage.setItem(key, value)
             },
             [item.name, item.value],
           )
-        }
-      }),
-    )
+        }),
+      )
+    }
 
     await newPage.close()
   }
