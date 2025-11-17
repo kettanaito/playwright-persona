@@ -202,10 +202,8 @@ async function restoreSessionState(
   sesionFile: SessionFile,
   page: Page,
 ): Promise<void> {
-  await page.context().addCookies(sesionFile.cookies)
-
-  if (sesionFile.origins.length === 0) {
-    return
+  if (sesionFile.cookies.length > 0) {
+    await page.context().addCookies(sesionFile.cookies)
   }
 
   const newPage = await page.context().newPage()
