@@ -28,18 +28,17 @@
   },
   "license": "MIT",
   "repository": {
-    "type": "git",
-    "url": "git+https://github.com/kettanaito/playwright-persona.git"
+    "url": "https://github.com/kettanaito/playwright-persona"
   },
   "publishConfig": {
     "access": "public"
   },
   "devDependencies": {
-    "@ossjs/release": "^0.8.1",
-    "@playwright/test": "^1.53.1",
+    "@ossjs/release": "^0.10.1",
+    "@playwright/test": "^1.57.0",
     "@types/node": "^24.0.7",
     "tsdown": "^0.12.9",
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   },
   "dependencies": {

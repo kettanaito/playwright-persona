@@ -23,8 +23,46 @@ type SessionValueType =
 export type SessionType = Record<string, SessionValueType>
 
 export interface PersonaOptions<Session extends SessionType> {
+  /**
+   * Create a new session for this persona.
+   * Returns the context object to share state across other methods.
+   *
+   * @example
+   * async createSession({ page }) {
+   *   const user = await createMockUser()
+   *   await page.goto('/login')
+   *   await page.getByLabel('Username').fill(user.name)
+   *   await page.getByLagbel('Password').fill(user.password)
+   *   await page.getByRole('button', { name: 'Log in' }).click()
+   *
+   *   return { user }
+   * }
+   */
   createSession: CreateSessionFunction<Session>
+
+  /**
+   * Verify that the given session belongs to this persona.
+   * Used to determine if the authentication state stored on disk
+   * should still be used or a new session should be created.
+   *
+   * @example
+   * async verifySession({ page, session }) {
+   *   await page.goto('/dashboard')
+   *   await expect(page.getByText(session.user.name)).toBeVisible()
+   * }
+   */
   verifySession: VerifySessionFunction<Session>
+
+  /**
+   * Destroy the given session.
+   * Used to properly dispose of test resources related to a stored session
+   * (e.g. test records in a database).
+   *
+   * @example
+   * async destroySession({ session }) {
+   *   await deleteUser({ where: { id: session.user.id } })
+   * }
+   */
   destroySession?: DestroySessionFunction<Session>
 }
 
