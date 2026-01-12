@@ -221,7 +221,7 @@ Above, the `user` persona creates a random user in the database, then authentica
 
 Finally, if the persisted session is invalid (or missing), the persona will create a new session. But here's a problem: the random user associated with the stale session _still exists in the database!_
 
-To prevent leaking resources, use the `destroySession` method of the persona. It will run then the library spots a stale session and allows you to clean up any resources associated with that session (the `session` value in this method points to the _stale_ session). For example, run a delete query in your database to delete the user associated with the previous session as they won't ever be reused again.
+To manage authentication-dependent resources, use the `destroySession` method of the persona. It will run then the library spots a stale session and allows you to clean up any resources associated with that session (the `session` value in this method points to the _stale_ session). For example, run a delete query in your database to delete the user associated with the previous session as they won't ever be reused again.
 
 > [!IMPORTANT]
 > You can extend the example above and introduce a _predictable randomness_ to your test users. One way to do that is by grabbing the second argument of `createSession`—the Playwright's `testInfo` object—and, say, using `testInfo.testId` as the test user's `id`.
@@ -230,7 +230,8 @@ To prevent leaking resources, use the `destroySession` method of the persona. It
 
 Playwright Persona is not opinionated in where you integrate authentication into your test setup. For example, you can reuse the same authenticated state across the entire test run, which is similar to what Playwright recommends currently.
 
-> [!WARNING] > **We do not recommend this approach**. By using this, you are introducing a _shared state_ in a form of authentication state. This is highly likely to make your tests flaky.
+> [!WARNING]
+> **This approach is not recommended**. By sharing authentication across multiple tests you are literally introducing a _shared state_.This is highly discouraged because this is a sure road to flaky tests.
 
 First, create a special `auth.setup.ts` test that will use the `authenticate()` fixture to provision authentication once:
 
