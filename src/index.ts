@@ -191,7 +191,7 @@ export function combinePersonas<Personas extends Array<Persona<any, any>>>(
           storageState: sessionFile,
         })
         const newPage = await newContext.newPage()
-        await restoreSessionState(sessionFile, newPage)
+        await newContext.setStorageState(sessionFile)
 
         return persona
           .verifySession(
@@ -202,7 +202,7 @@ export function combinePersonas<Personas extends Array<Persona<any, any>>>(
             testInfo,
           )
           .then(async () => {
-            await restoreSessionState(sessionFile, page)
+            await context.setStorageState(sessionFile)
             return sessionFile.session
           })
           .catch(async () => {
@@ -234,42 +234,4 @@ type SessionFile = Awaited<
 async function readSessionFile(filePath: string): Promise<SessionFile> {
   const textContent = await fs.promises.readFile(filePath, 'utf8')
   return JSON.parse(textContent) as SessionFile
-}
-
-async function restoreSessionState(
-  sesionFile: SessionFile,
-  page: Page,
-): Promise<void> {
-  if (sesionFile.cookies.length > 0) {
-    await page.context().addCookies(sesionFile.cookies)
-  }
-
-  if (sesionFile.origins.length > 0) {
-    const newPage = await page.context().newPage()
-    await newPage.route(/.+/, async (route) => {
-      await route.fulfill({ body: `<html></html>` }).catch(() => {})
-    })
-
-    /**
-     * @note Restore origin state sequentially to prevent race conditions
-     * while reusing the same frame on the page for this.
-     */
-    for (const state of sesionFile.origins) {
-      const frame = newPage.mainFrame()
-      await frame.goto(state.origin)
-
-      await Promise.allSettled(
-        state.localStorage.map((item) => {
-          return frame.evaluate(
-            ([key, value]) => {
-              localStorage.setItem(key, value)
-            },
-            [item.name, item.value],
-          )
-        }),
-      )
-    }
-
-    await newPage.close()
-  }
 }
