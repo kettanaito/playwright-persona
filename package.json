@@ -3,13 +3,16 @@
   "name": "playwright-persona",
   "version": "0.2.8",
   "description": "Authentication in Playwright using personas.",
-  "main": "./build/index.js",
-  "types": "./build/index.d.ts",
+  "main": "./build/index.mjs",
+  "exports": {
+    ".": "./build/index.mjs"
+  },
   "files": [
     "./build",
     "./src"
   ],
   "scripts": {
+    "lint": "publint",
     "build": "tsdown",
     "test": "vitest",
     "release": "release publish"
@@ -40,6 +43,7 @@
     "@ossjs/release": "^0.10.1",
     "@playwright/test": "^1.59.1",
     "@types/node": "^24.0.7",
+    "publint": "^0.3.18",
     "tsdown": "^0.21.7",
     "typescript": "^5.9.3",
     "vitest": "^4.1.2"
